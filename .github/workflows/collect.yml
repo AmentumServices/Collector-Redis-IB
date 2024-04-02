@@ -22,6 +22,7 @@ jobs:
           # install deps
           apt-get update && apt-get install -y skopeo
           skopeo login registry1.dso.mil -u ${{ vars.REGISTRY_USER }} -p ${{ secrets.REGISTRY_TOKEN }}
+          skopeo login docker.io -u ${{ vars.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_TOKEN }}
           skopeo sync \
               --src-creds=${{ vars.REGISTRY_USER }}:${{ secrets.REGISTRY_TOKEN }} \
               --src yaml --dest dir ${{ vars.COLLECTOR }}.yml ${{ vars.COLLECTOR }}
