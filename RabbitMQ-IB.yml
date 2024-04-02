@@ -1,6 +1,7 @@
 registry1.dso.mil:
     images-by-tag-regex:
         ironbank/bitnami/rabbitmq: (^3.12.13)|(latest)
-hub.docker.io:
+docker.io:
     images-by-tag-regex:
         bitnami/rabbitmq-cluster-operator: (^2.7.0)|(latest)
+        # bitnami/rabbitmq-messaging-topology-operator: (^2.7.0)|(latest)
