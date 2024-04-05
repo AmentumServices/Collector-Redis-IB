@@ -1,4 +1,4 @@
-name: RabbitMQ IB Collector
+name: Redis IB Collector
 run-name: ${{ github.actor }} is Collecting 🚀
 on: [push]
 jobs:
