@@ -1,9 +1,6 @@
-[submodule "rabbitmq-cluster-operator"]
-	path = rabbitmq-cluster-operator
-	url = https://github.com/rabbitmq/cluster-operator.git
-[submodule "rabbitmq-messaging-topology-operator"]
-	path = rabbitmq-messaging-topology-operator
-	url = https://github.com/rabbitmq/messaging-topology-operator.git
-[submodule "rabbitmq-ib"]
-	path = rabbitmq-ib
-	url = https://repo1.dso.mil/dsop/bitnami/rabbitmq/rabbitmq312.git
+[submodule "redis-ib"]
+	path = redis-ib
+	url = https://repo1.dso.mil/dsop/opensource/redis/redis7.git
+[submodule "bitnami-redis-ib"]
+	path = "bitnami-redis-ib"
+	url = https://repo1.dso.mil/dsop/bitnami/redis.git

@@ -1,4 +1,5 @@
 registry1.dso.mil:
     images-by-tag-regex:
         ironbank/opensource/redis/redis7: (^7.2.4)|(latest)
+        ironbank/bitnami/redis: (^7.2.4)|(latest)
         # bitnami/rabbitmq-messaging-topology-operator: (^2.7.0)|(latest)
