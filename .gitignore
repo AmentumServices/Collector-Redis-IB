@@ -3,7 +3,7 @@
 
 # Ignore subdirectories
 */
-!.github/
+!.github/**
 !bitnami-redis-ib/
 !redis7-ib/
 

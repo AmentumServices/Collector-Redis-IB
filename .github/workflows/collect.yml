@@ -11,10 +11,10 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Get current date
         id: DATE
-        run: echo "::set-output name=date::$(date '+%Y%m%d-%H%M')"
+        # run: echo "::set-output name=date::$(date '+%Y%m%d-%H%M')"
+        run: echo "name=$(date '+%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
       - name: Main Skopeo Script
         run: |
           ls -lah ${{ github.workspace }}
