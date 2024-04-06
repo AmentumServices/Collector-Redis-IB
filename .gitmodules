@@ -1,6 +1,6 @@
-[submodule "redis-ib"]
-	path = redis-ib
+[submodule "redis7-ib"]
+	path = redis7-ib
 	url = https://repo1.dso.mil/dsop/opensource/redis/redis7.git
 [submodule "bitnami-redis-ib"]
-	path = "bitnami-redis-ib"
+	path = bitnami-redis-ib
 	url = https://repo1.dso.mil/dsop/bitnami/redis.git

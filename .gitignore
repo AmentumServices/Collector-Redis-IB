@@ -4,9 +4,8 @@
 # Ignore subdirectories
 */
 !.github/
-!rabbitmq-messaging-topology-operator/
-!rabbitmq-cluster-operator/
-!rabbitmq-ib/
+!bitnami-redis-ib/
+!redis7-ib/
 
 # Ignore Files
 *.tgz
