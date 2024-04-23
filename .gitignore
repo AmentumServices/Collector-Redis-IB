@@ -2,7 +2,6 @@
 .vagrant*
 
 # Ignore subdirectories
-*/
 !.github/**
 !bitnami-redis-ib/
 !redis7-ib/
