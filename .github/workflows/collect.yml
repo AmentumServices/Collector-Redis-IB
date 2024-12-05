@@ -53,7 +53,7 @@ jobs:
         run: |
           cd ${{ vars.COLLECTOR }}
           echo -e "\nSet repo and pull chart"
-          helm repo add bitnami oci://registry-1.docker.io/bitnamicharts/redis
+          helm repo add bitnami https://charts.bitnami.com/bitnami
           helm pull bitnami/redis
           echo -e "\nInstall helm images plugin"
           helm plugin install https://github.com/nikhilsbhat/helm-images
