@@ -43,7 +43,13 @@ jobs:
         run: |
           skopeo login registry1.dso.mil -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_TOKEN }}
 
-      - name: Grab helm
+
+      - name: Run Skopeo Sync
+        run: |
+          skopeo sync \
+              --src yaml --dest dir ${{ vars.COLLECTOR }}.yml ${{ vars.COLLECTOR }}
+
+      - name: Grab helm chart
         run: |
           cd ${{ vars.COLLECTOR }}
           echo -e "\nSet repo and pull chart"
@@ -53,11 +59,6 @@ jobs:
           helm plugin install https://github.com/nikhilsbhat/helm-images
           echo -e "\nImages listed in chart"
           helm images get bitnami/redis
-          
-      - name: Run Skopeo Sync
-        run: |
-          skopeo sync \
-              --src yaml --dest dir ${{ vars.COLLECTOR }}.yml ${{ vars.COLLECTOR }}
 
       - name: Directory Contents
         run: |
