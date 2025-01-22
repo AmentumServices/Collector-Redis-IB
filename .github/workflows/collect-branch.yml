@@ -2,8 +2,9 @@ name: Redis IB Collector
 run-name: ${{ github.actor }} is Collecting 🚀
 on:
   push:
-    branches:
+    branches-ignore:
       - main
+
   schedule:
     - cron: "0 0 * * 1" # Update weekly on Monday Midnight
   workflow_dispatch:
@@ -69,7 +70,7 @@ jobs:
         run: |
           echo "Directory Contents"
           ls -lAhS *
-          echo -e "\n\nDirectory Size"
+          echo -e "\nDirectory Size"
           du -hd1 
 
       - name: TARchive Skopeo Output
@@ -163,15 +164,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-          path: ${{ vars.COLLECTOR }}
-
-      - name: Copy README to ${{ vars.COLLECTOR }} ISO
-        run: cp -v README.md ${{ vars.COLLECTOR }}/
 
       - name: Pull helm chart
         run: |
-          mkdir -p ${{ vars.COLLECTOR }}/helmchart
-          cd ${{ vars.COLLECTOR }}/helmchart
+          mkdir helmchart
+          cd helmchart
           echo -e "\nSet repo and pull chart"
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm pull bitnami/redis
@@ -179,29 +176,29 @@ jobs:
           | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.helm.sha
 
       - name: Show Artifacts
-        run: ls -Alht ${{ vars.COLLECTOR }}
+        run: ls -Alht *
 
       - name: Generate Artifact Hash File
         run: |
-          sha256sum -b ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}* \
-          | tee ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
+          sha256sum -b ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}* | tee \
+            ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
 
       - name: Upload Artifact Hash File
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
-          path: ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
+          path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
 
       - name: ISO Table of contents
         run: |
-          tree ${{ vars.COLLECTOR }} \
-            | tee ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
+          tree -a \
+            | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
 
       - name: Upload iso ToC artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
-          path: ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
+          path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
           if-no-files-found: error
 
       - name: Make ISO
@@ -210,15 +207,16 @@ jobs:
             -V '${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}' \
             -A '${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}' \
             -o ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso \
-            ${{ vars.COLLECTOR }}
+            ${{ vars.COLLECTOR }}-*.* helmchart *.md
 
       - name: Implant MD5 sum into iso
         run: implantisomd5 ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso
 
       - name: Generate ISO Hash
         run: |
-          sha256sum -b ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso \
-          | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
+          sha256sum -b ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso | tee \
+            ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
+          cat ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
 
       - name: Show ISO & Hash
         run: ls -Alh *.iso*
@@ -254,30 +252,6 @@ jobs:
       - name: Show Artifacts
         run: ls -Alh ${{ vars.COLLECTOR }}-*.*
 
-      - name: Set up git
-        run: |
-          git config user.name "$(git log -n 1 --pretty=format:%an)"
-          git config user.email "$(git log -n 1 --pretty=format:%ae)"
-
-      - name: Create tag
-        uses: rickstaa/action-create-tag@v1
-        id: tag_create
-        with:
-          tag: ${{ needs.Date.outputs.Date }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag_exists_error: false
-          message: "Release for ${{ needs.Date.outputs.Date }} run"
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: ${{ vars.COLLECTOR }} ${{ needs.Date.outputs.Date }}
-          tag_name: ${{ needs.Date.outputs.Date }}
-          make_latest: true
-          files: |
-            ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}*.*
-
   Sharepoint:
     runs-on: ubuntu-24.04
     needs: [Date, MakeISO]
@@ -293,15 +267,3 @@ jobs:
       - name: Show Artifacts
         run: ls -Alh ${{ vars.COLLECTOR }}-*.*
 
-      - name: Send Files to Sharepoint
-        uses: amentumcms/sharepoint-file-upload-action@pappasjfed-patch-1
-        with:
-          file_path: "${{ vars.COLLECTOR }}-*.*"
-          host_name: ${{ secrets.SHAREPOINT_HOST }}
-          site_name: ${{ secrets.SHAREPOINT_SITE }}
-          upload_path: '${{ secrets.SHAREPOINT_BASEPATH }}/${{ vars.COLLECTOR }}/${{ needs.Date.outputs.Date }}'
-          tenant_id: ${{ secrets.SHAREPOINT_TENANT_ID }}
-          client_id: ${{ secrets.SHAREPOINT_APP_ID }}
-          client_secret: ${{ secrets.SHAREPOINT_APP_SECRET }}
-          login_endpoint: 'login.microsoftonline.us'
-          graph_endpoint: 'graph.microsoft.us'
