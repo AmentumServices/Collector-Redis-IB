@@ -52,25 +52,28 @@ jobs:
       - name: Run Skopeo Sync
         run: |
           skopeo sync --scoped \
-              --src yaml --dest dir ${{ vars.COLLECTOR }}.yml ${{ vars.COLLECTOR }}
+            --src yaml --dest dir \
+            ${{ vars.COLLECTOR }}.yml \
+            ${{ vars.COLLECTOR }}
 
       - name: Grab helm chart
         run: |
-          cd ${{ vars.COLLECTOR }}
+          mkdir -p ${{ vars.COLLECTOR }}/helmchart
+          cd ${{ vars.COLLECTOR }}/helmchart
           echo -e "\nSet repo and pull chart"
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm pull bitnami/redis
+          helm repo add redis https://charts.bitnami.com/bitnami/
+          helm pull redis/redis
           echo -e "\nInstall helm images plugin"
           helm plugin install https://github.com/nikhilsbhat/helm-images
           echo -e "\nImages listed in chart"
-          helm images get bitnami/redis
+          helm images get redis/redis
+          sha256sum -b * \
+          | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.helm.sha
 
       - name: Directory Contents
         run: |
-          echo "Directory Contents"
-          ls -lAhS *
-          echo -e "\n\nDirectory Size"
-          du -hd1 
+          echo -e "Directory Contents\n$(ls -lAhS *)"
+          echo -e "\n\nDirectory Size\n$(du -hd1)"
 
       - name: TARchive Skopeo Output
         run: |
@@ -91,18 +94,21 @@ jobs:
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.tgz
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.tgz
+          if-no-files-found: error
 
       - name: Upload TARchive SHA
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.tgz.sha
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.tgz.sha
+          if-no-files-found: error
 
       - name: Upload TARchive ToC
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.tgz.txt
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.tgz.txt
+          if-no-files-found: error
 
   Code:
     needs: [Date]
@@ -135,12 +141,14 @@ jobs:
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.bundle
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.bundle
+          if-no-files-found: error
 
-      - name: Upload bundle sha
+      - name: Upload bundle hash
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.bundle.sha
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.bundle.sha
+          if-no-files-found: error
 
   MakeISO:
     runs-on: ubuntu-24.04
@@ -157,7 +165,7 @@ jobs:
       - name: Install mkisofs
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y mkisofs isomd5sum
+          sudo apt-get install -y mkisofs isomd5sum wget
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -173,8 +181,12 @@ jobs:
           mkdir -p ${{ vars.COLLECTOR }}/helmchart
           cd ${{ vars.COLLECTOR }}/helmchart
           echo -e "\nSet repo and pull chart"
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm pull bitnami/redis
+          helm repo add redis https://charts.bitnami.com/bitnami/
+          helm pull redis/redis
+          echo -e "\nInstall helm images plugin"
+          helm plugin install https://github.com/nikhilsbhat/helm-images
+          echo -e "\nImages listed in chart"
+          helm images get redis/redis
           sha256sum -b * \
           | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.helm.sha
 
@@ -183,21 +195,23 @@ jobs:
 
       - name: Generate Artifact Hash File
         run: |
-          sha256sum -b ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}* \
-          | tee ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
+          cd ${{ vars.COLLECTOR }}
+          sha256sum -b *.* | tee \
+            ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
 
       - name: Upload Artifact Hash File
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
           path: ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
+          if-no-files-found: error
 
       - name: ISO Table of contents
         run: |
           tree ${{ vars.COLLECTOR }} \
             | tee ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
 
-      - name: Upload iso ToC artifact
+      - name: Upload ISO ToC artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
@@ -235,6 +249,7 @@ jobs:
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
+          if-no-files-found: error
 
   Release:
     runs-on: ubuntu-24.04
