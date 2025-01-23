@@ -53,18 +53,20 @@ jobs:
       - name: Run Skopeo Sync
         run: |
           skopeo sync --scoped \
-              --src yaml --dest dir ${{ vars.COLLECTOR }}.yml ${{ vars.COLLECTOR }}
+            --src yaml --dest dir \
+            ${{ vars.COLLECTOR }}.yml \
+            ${{ vars.COLLECTOR }}
 
       - name: Grab helm chart
         run: |
-          cd ${{ vars.COLLECTOR }}
+          mkdir -p helmchart
+          cd helmchart
           echo -e "\nSet repo and pull chart"
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm pull bitnami/redis
+          helm pull https://charts.bitnami.com/bitnami/redis
           echo -e "\nInstall helm images plugin"
           helm plugin install https://github.com/nikhilsbhat/helm-images
           echo -e "\nImages listed in chart"
-          helm images get bitnami/redis
+          helm images get https://charts.bitnami.com/bitnami/redis
 
       - name: Directory Contents
         run: |
@@ -179,7 +181,7 @@ jobs:
           mkdir -p ${{ vars.COLLECTOR }}/helmchart
           cd ${{ vars.COLLECTOR }}/helmchart
           echo -e "\nSet repo and pull chart"
-          helm pull oci://registry-1.docker.io/bitnamicharts/redis
+          helm pull https://charts.bitnami.com/bitnami/redis
           sha256sum -b * \
           | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.helm.sha
 
