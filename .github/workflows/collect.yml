@@ -58,21 +58,22 @@ jobs:
 
       - name: Grab helm chart
         run: |
-          mkdir -p helmchart
-          cd helmchart
+          mkdir -p ${{ vars.COLLECTOR }}/helmchart
+          cd ${{ vars.COLLECTOR }}/helmchart
           echo -e "\nSet repo and pull chart"
-          helm pull https://charts.bitnami.com/bitnami/redis
+          helm repo add redis https://charts.bitnami.com/bitnami/
+          helm pull redis/redis
           echo -e "\nInstall helm images plugin"
           helm plugin install https://github.com/nikhilsbhat/helm-images
           echo -e "\nImages listed in chart"
-          helm images get https://charts.bitnami.com/bitnami/redis
+          helm images get redis/redis
+          sha256sum -b * \
+          | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.helm.sha
 
       - name: Directory Contents
         run: |
-          echo "Directory Contents"
-          ls -lAhS *
-          echo -e "\n\nDirectory Size"
-          du -hd1 
+          echo -e "Directory Contents\n$(ls -lAhS *)"
+          echo -e "\n\nDirectory Size\n$(du -hd1)"
 
       - name: TARchive Skopeo Output
         run: |
@@ -142,7 +143,7 @@ jobs:
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.bundle
           if-no-files-found: error
 
-      - name: Upload bundle sha
+      - name: Upload bundle hash
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.bundle.sha
@@ -164,7 +165,7 @@ jobs:
       - name: Install mkisofs
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y mkisofs isomd5sum
+          sudo apt-get install -y mkisofs isomd5sum wget
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -180,7 +181,12 @@ jobs:
           mkdir -p ${{ vars.COLLECTOR }}/helmchart
           cd ${{ vars.COLLECTOR }}/helmchart
           echo -e "\nSet repo and pull chart"
-          helm pull https://charts.bitnami.com/bitnami/redis
+          helm repo add redis https://charts.bitnami.com/bitnami/
+          helm pull redis/redis
+          echo -e "\nInstall helm images plugin"
+          helm plugin install https://github.com/nikhilsbhat/helm-images
+          echo -e "\nImages listed in chart"
+          helm images get redis/redis
           sha256sum -b * \
           | tee ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.helm.sha
 
@@ -190,7 +196,7 @@ jobs:
       - name: Generate Artifact Hash File
         run: |
           cd ${{ vars.COLLECTOR }}
-          sha256sum -b * | tee \
+          sha256sum -b *.* | tee \
             ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.sha
 
       - name: Upload Artifact Hash File
@@ -205,7 +211,7 @@ jobs:
           tree ${{ vars.COLLECTOR }} \
             | tee ${{ vars.COLLECTOR }}/${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
 
-      - name: Upload iso ToC artifact
+      - name: Upload ISO ToC artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.txt
@@ -243,6 +249,7 @@ jobs:
         with:
           name: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
           path: ${{ vars.COLLECTOR }}-${{ needs.Date.outputs.Date }}.iso.sha
+          if-no-files-found: error
 
   Release:
     runs-on: ubuntu-24.04
